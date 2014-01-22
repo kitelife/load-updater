@@ -136,7 +136,7 @@ func startLoadUpdate() {
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	ch := make(chan int)
+	ch := make(chan int, runtime.NumCPU())
 	var wg sync.WaitGroup
 	worker := func() {
 		count := 0
@@ -146,8 +146,9 @@ func startLoadUpdate() {
 				time.Sleep(time.Microsecond)
 			}
 			select {
-			case _ = <-ch:
+			case _ = <- ch:
 				// 退出当前执行的goroutine，但是defer函数还会继续调用
+				wg.Done()
 				runtime.Goexit()
 				return
 			default:
@@ -155,8 +156,29 @@ func startLoadUpdate() {
 			}
 		}
 	}
-	startGoroutines := func() {
-		fmt.Println("In startGoroutine")
+
+	stopGoroutines := func() {
+		fmt.Println("In stopGoroutine")
+		// 返回正在执行和排队的任务总数
+		goroutinesRunning := runtime.NumGoroutine()
+		for index := 0; index < goroutinesRunning; index++ {
+			ch <- index
+		}
+		wg.Wait()
+		goroutineStarted = false
+		fmt.Printf("goroutineStarted: %t", goroutineStarted)
+	}
+
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, os.Interrupt, os.Kill)
+	for {
+		select {
+		case _ = <-sc:
+			stopGoroutines()
+			return
+		default:
+		}
+
 		if goroutineStarted == false {
 			fmt.Println("In startGoroutine -> if")
 			// 返回正在执行和排队的任务总数
@@ -171,36 +193,14 @@ func startLoadUpdate() {
 			}
 			goroutineStarted = true
 		}
-	}
 
-	stopGoroutines := func() {
-		fmt.Println("In stopGoroutine")
-		// 返回正在执行和排队的任务总数
-		goroutinesRunning := runtime.NumGoroutine()
-		for index := 0; index < goroutinesRunning; index++ {
-			ch<- index
-		}
-		wg.Wait()
-		goroutineStarted = false
-		fmt.Printf("goroutineStarted: %t", goroutineStarted)
-	}
-
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
-	for {
-		select {
-		case _ = <-sc:
-			stopGoroutines()
-			return
-		default:
-		}
-		startGoroutines()
 		loads := cpuPercent(1)
 		if sumFloat64(loads) >= float64(runtime.NumCPU() % 50) {
 			fmt.Println(sumFloat64(loads))
 			stopGoroutines()
 			time.Sleep(time.Duration(5) * time.Second)
 		}
+		wg.Wait()
 	}
 
 }
