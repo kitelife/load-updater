@@ -189,8 +189,8 @@ func startLoadUpdate(loadLevel, runDuration int) {
 			stopGoroutines()
 			return
 		case now := <-forTimeOut:
-			fmt.Println("%s, 运行时间到！", now.Format("2006-01-02 15:04:05"))
 			stopGoroutines()
+			fmt.Printf("%s, 运行时间到！\n", now.Format("2006-01-02 15:04:05"))
 			return
 		default:
 			// 为了不阻塞，得加default分支
