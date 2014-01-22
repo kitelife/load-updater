@@ -48,7 +48,7 @@ def get_system_per_cpu_times():
 type CPUInfo map[string]float64
 
 func calculate(t1, t2 CPUInfo) float64 {
-	sum := func(data CPUInfo) float64{
+	sum := func(data CPUInfo) float64 {
 		all := 0.0
 		for key, value := range (data) {
 			all += value
@@ -82,13 +82,20 @@ func getSystemPerCPUTimes() []CPUInfo {
 		fields := strings.Fields(line)
 		if fields[0] == "cpu" {
 			var oneCPU CPUInfo
-			oneCPU["user"] = strconv.ParseFloat(fields[1])/float64(sc_clk_tck)
-			oneCPU["nice"] = strconv.ParseFloat(fields[2])/float64(sc_clk_tck)
-			oneCPU["system"] = strconv.ParseFloat(fields[3])/float64(sc_clk_tck)
-			oneCPU["idle"] = strconv.ParseFloat(fields[4])/float64(sc_clk_tck)
-			oneCPU["iowait"] = strconv.ParseFloat(fields[5])/float64(sc_clk_tck)
-			oneCPU["irq"] = strconv.ParseFloat(fields[6])/float64(sc_clk_tck)
-			oneCPU["softirq"] = strconv.ParseFloat(fields[7])/float64(sc_clk_tck)
+			userPart, _ := strconv.ParseFloat(fields[1])
+			oneCPU["user"] = userPart/float64(sc_clk_tck)
+			nicePart, _ := strconv.ParseFloat(fields[2])
+			oneCPU["nice"] = nicePart/float64(sc_clk_tck)
+			systemPart, _ := strconv.ParseFloat(fields[3])
+			oneCPU["system"] = systemPart/float64(sc_clk_tck)
+			idlePart, _ := strconv.ParseFloat(fields[4])
+			oneCPU["idle"] = idlePart/float64(sc_clk_tck)
+			iowaitPart, _ := strconv.ParseFloat(fields[5])
+			oneCPU["iowait"] = iowaitPart/float64(sc_clk_tck)
+			irqPart, _ := strconv.ParseFloat(fields[6])
+			oneCPU["irq"] = irqPart/float64(sc_clk_tck)
+			softirqPart, _ := strconv.ParseFloat(fields[7])
+			oneCPU["softirq"] = softirqPart/float64(sc_clk_tck)
 			results = append(results, oneCPU)
 		}
 	}
