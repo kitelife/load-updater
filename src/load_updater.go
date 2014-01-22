@@ -188,6 +188,7 @@ func startLoadUpdate(loadLevel, runDuration int) {
 			stopGoroutines()
 			return
 		case <-time.After(time.Duration(runDuration) * time.Minute):
+			fmt.Println("运行时间到！")
 			stopGoroutines()
 			return
 		default:
