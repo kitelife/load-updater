@@ -181,18 +181,18 @@ func startLoadUpdate() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 	for {
-		startGoroutines()
-		loads := cpuPercent(1)
-		if sumFloat64(loads) >= float64(runtime.NumCPU()%50) {
-			fmt.Println(sumFloat64(loads))
-			stopGoroutines()
-			time.Sleep(time.Duration(5) * time.Second)
-		}
 		select {
 		case _ = <-sc:
 			stopGoroutines()
 			return
 		default:
+		}
+		startGoroutines()
+		loads := cpuPercent(1)
+		if sumFloat64(loads) >= float64(runtime.NumCPU() % 50) {
+			fmt.Println(sumFloat64(loads))
+			stopGoroutines()
+			time.Sleep(time.Duration(5) * time.Second)
 		}
 	}
 
