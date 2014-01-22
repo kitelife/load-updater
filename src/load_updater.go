@@ -157,6 +157,7 @@ func startLoadUpdate() {
 	startGoroutines := func() {
 		fmt.Println("In startGoroutine")
 		if goroutineStarted == false {
+			fmt.Println("In startGoroutine -> if")
 			// 返回正在执行和排队的任务总数
 			goroutinesRunning := runtime.NumGoroutine()
 			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
@@ -171,11 +172,13 @@ func startLoadUpdate() {
 	}
 
 	stopGoroutines := func() {
+		fmt.Println("In stopGoroutine")
 		// 返回正在执行和排队的任务总数
 		goroutinesRunning := runtime.NumGoroutine()
 		for index := 0; index < goroutinesRunning; index++ {
 			ch<-index
 		}
+		goroutineStarted = false
 	}
 
 	sc := make(chan os.Signal, 1)
