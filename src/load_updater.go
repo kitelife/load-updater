@@ -80,7 +80,8 @@ func getSystemPerCPUTimes() []CPUInfo {
 	results := make([]CPUInfo, 16)
 	for _, line := range (lines) {
 		fields := strings.Fields(line)
-		if fields[0] == "cpu" {
+		fmt.Printf("fields length: %d\n", len(fields))
+		if len(fields) > 0 && strings.HasPrefix(fields[0], "cpu") {
 			var oneCPU = make(CPUInfo)
 			userPart, _ := strconv.ParseFloat(fields[1], 64)
 			oneCPU["user"] = userPart/float64(sc_clk_tck)
