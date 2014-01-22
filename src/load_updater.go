@@ -24,27 +24,6 @@ var sc_clk_tck C.long
 
 var goroutineStarted = false
 
-/*
-def get_system_per_cpu_times():
-    """Return a list of namedtuple representing the CPU times
-    for every CPU available on the system.
-    """
-    cpus = []
-    f = open('/proc/stat', 'r')
-    # get rid of the first line who refers to system wide CPU stats
-    try:
-        f.readline()
-        for line in f.readlines():
-            if line.startswith('cpu'):
-                values = line.split()[1:8]
-                values = tuple([float(x) / _CLOCK_TICKS for x in values])
-                entry = nt_sys_cputimes(*values[:7])
-                cpus.append(entry)
-        return cpus
-    finally:
-        f.close()
-*/
-
 type CPUInfo map[string]float64
 
 func calculate(t1, t2 CPUInfo) float64 {
