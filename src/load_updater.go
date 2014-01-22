@@ -163,7 +163,7 @@ func startLoadUpdate() {
 		for index := 0; index < goroutinesRunning; index++ {
 			select {
 			case v := <-exitNotify:
-				fmt.Printf("exitNotify: %t\n", )
+				fmt.Printf("exitNotify: %t\n", v)
 				goroutinesRunning -= 1
 			}
 		}
