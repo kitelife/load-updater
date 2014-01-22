@@ -50,7 +50,7 @@ type CPUInfo map[string]float64
 func calculate(t1, t2 CPUInfo) float64 {
 	sum := func(data CPUInfo) float64 {
 		all := 0.0
-		for key, value := range (data) {
+		for _, value := range (data) {
 			all += value
 		}
 		return all
