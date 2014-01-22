@@ -82,7 +82,6 @@ func getSystemPerCPUTimes() []CPUInfo {
 	for _, line := range (lines) {
 		fields := strings.Fields(line)
 		if len(fields) > 0 && strings.HasPrefix(fields[0], "cpu") {
-			fmt.Println(fields[0])
 			var oneCPU = make(CPUInfo)
 			userPart, _ := strconv.ParseFloat(fields[1], 64)
 			oneCPU["user"] = userPart/float64(sc_clk_tck)
@@ -148,9 +147,7 @@ func startLoadUpdate() {
 			}
 			select {
 			case _ = <-ch:
-				// 退出当前执行的goroutine，但是defer函数还会继续调用
 				exitNotify <- true
-				runtime.Goexit()
 				return
 			default:
 				_ = float64(count)/10.22
@@ -169,7 +166,7 @@ func startLoadUpdate() {
 			fmt.Printf("exitNotify: %t\n", <-exitNotify)
 		}
 		goroutineStarted = false
-		fmt.Printf("goroutineStarted: %t", goroutineStarted)
+		fmt.Printf("goroutineStarted: %t\n", goroutineStarted)
 	}
 
 	sc := make(chan os.Signal, 1)
