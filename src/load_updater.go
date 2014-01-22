@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"strconv"
+	"flag"
 )
 
 /*
@@ -128,7 +129,7 @@ func sumFloat64(values []float64) float64 {
 	return sum
 }
 
-func startLoadUpdate() {
+func startLoadUpdate(loadLevel, runDuration int) {
 
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
@@ -136,26 +137,37 @@ func startLoadUpdate() {
 	ch := make(chan int)
 	exitNotify := make(chan bool)
 	goroutinesRunning := 0
+	pauseInterval := 50000
+	if loadLevel > 2 {
+		pauseInterval = 500000
+	}else if loadLevel > 1 {
+		pauseInterval = 100000
+	}
+
 	worker := func() {
 		count := 0
 		for {
 			count += 1
-			if count%500000 == 0 {
+			if count%pauseInterval == 0 {
 				time.Sleep(time.Microsecond)
 			}
 			select {
-			case _ = <-ch:
+			case <-ch:
 			exitNotify <- true
 				runtime.Goexit()
 			default:
 				_ = float64(count)/10.22
-				_ = float64(count+10000)/10.22
+				if loadLevel > 1 {
+					_ = float64(count + 1000)/10.22
+				}
+				if loadLevel > 2 {
+					_ = float64(count + 5000)/10.22
+				}
 			}
 		}
 	}
 
 	stopGoroutines := func() {
-		fmt.Println("In stopGoroutine")
 		fmt.Printf("before, goroutinesRunning: %d\n", goroutinesRunning)
 		for index := 0; index < goroutinesRunning; index++ {
 			ch <- index
@@ -165,23 +177,24 @@ func startLoadUpdate() {
 			fmt.Printf("exitNotify: %t\n", <-exitNotify)
 			goroutinesRunning-=1
 		}
-		fmt.Printf("after, goroutinesRunning: %d\n", goroutinesRunning)
 		goroutineStarted = false
-		fmt.Printf("goroutineStarted: %t\n", goroutineStarted)
 	}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, os.Interrupt, os.Kill)
 	for {
 		select {
-		case _ = <-sc:
+		case <-sc:
+			stopGoroutines()
+			return
+		case <-time.After(time.Duration(runDuration) * time.Minute):
 			stopGoroutines()
 			return
 		default:
+			// 为了不阻塞，得加default分支
 		}
 
 		if goroutineStarted == false {
-			fmt.Println("In startGoroutine -> if")
 			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
@@ -204,7 +217,13 @@ func startLoadUpdate() {
 
 }
 
+var (
+	loadLevel   = flag.Int("load_level", 1, "Set the server CPU load level")
+	runDuration = flag.Int("run_duration", 10, "time duration this program to run, whose unit is minute")
+)
+
 func main() {
+	flag.Parse()
 	sc_clk_tck = C.sysconf(C._SC_CLK_TCK)
-	startLoadUpdate()
+	startLoadUpdate(*loadLevel, *runDuration)
 }
