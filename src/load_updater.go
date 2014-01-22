@@ -1,7 +1,7 @@
 package main
 
 import (
-	"sync"
+	//"sync"
 	"time"
 	"runtime"
 	"os"
@@ -136,8 +136,8 @@ func startLoadUpdate() {
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	ch := make(chan int, runtime.NumCPU())
-	var wg sync.WaitGroup
+	ch := make(chan int)
+	exitNotify := make(chan bool)
 	goroutinesRunning := 0
 	worker := func() {
 		count := 0
@@ -149,7 +149,7 @@ func startLoadUpdate() {
 			select {
 			case _ = <-ch:
 				// 退出当前执行的goroutine，但是defer函数还会继续调用
-				wg.Done()
+				exitNotify <- true
 				runtime.Goexit()
 				return
 			default:
@@ -164,9 +164,10 @@ func startLoadUpdate() {
 		// goroutinesRunning := runtime.NumGoroutine()
 		for index := 0; index < goroutinesRunning; index++ {
 			ch <- index
-			goroutinesRunning-=1
 		}
-		wg.Wait()
+		for index := 0; index < goroutinesRunning; index++ {
+			fmt.Printf("exitNotify: %t\n", <-exitNotify)
+		}
 		goroutineStarted = false
 		fmt.Printf("goroutineStarted: %t", goroutineStarted)
 	}
@@ -188,7 +189,6 @@ func startLoadUpdate() {
 			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
-					wg.Add(1)
 					go worker()
 					goroutinesRunning+=1
 					fmt.Printf("goroutinesRunning: %d\n", goroutinesRunning)
@@ -200,9 +200,7 @@ func startLoadUpdate() {
 		loads := cpuPercent(1)
 		if sumFloat64(loads) >= float64(runtime.NumCPU() % 50) {
 			fmt.Println(sumFloat64(loads))
-
 			stopGoroutines()
-
 			time.Sleep(time.Duration(5) * time.Second)
 		}
 	}
