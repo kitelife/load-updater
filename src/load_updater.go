@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	"syscall"
+	//"syscall"
 	"strconv"
 )
 
@@ -138,6 +138,7 @@ func startLoadUpdate() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	ch := make(chan int, runtime.NumCPU())
 	var wg sync.WaitGroup
+	goroutinesRunning := 0
 	worker := func() {
 		count := 0
 		for {
@@ -146,7 +147,7 @@ func startLoadUpdate() {
 				time.Sleep(time.Microsecond)
 			}
 			select {
-			case _ = <- ch:
+			case _ = <-ch:
 				// 退出当前执行的goroutine，但是defer函数还会继续调用
 				wg.Done()
 				runtime.Goexit()
@@ -160,9 +161,10 @@ func startLoadUpdate() {
 	stopGoroutines := func() {
 		fmt.Println("In stopGoroutine")
 		// 返回正在执行和排队的任务总数
-		goroutinesRunning := runtime.NumGoroutine()
+		// goroutinesRunning := runtime.NumGoroutine()
 		for index := 0; index < goroutinesRunning; index++ {
 			ch <- index
+			goroutinesRunning-=1
 		}
 		wg.Wait()
 		goroutineStarted = false
@@ -182,25 +184,29 @@ func startLoadUpdate() {
 		if goroutineStarted == false {
 			fmt.Println("In startGoroutine -> if")
 			// 返回正在执行和排队的任务总数
-			goroutinesRunning := runtime.NumGoroutine()
+			//goroutinesRunning := runtime.NumGoroutine()
 			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
 					wg.Add(1)
 					go worker()
+					goroutinesRunning+=1
 					fmt.Printf("goroutinesRunning: %d\n", runtime.NumGoroutine())
 				}
 			}
 			goroutineStarted = true
 		}
 
+		/*
 		loads := cpuPercent(1)
 		if sumFloat64(loads) >= float64(runtime.NumCPU() % 50) {
 			fmt.Println(sumFloat64(loads))
+
 			stopGoroutines()
+
 			time.Sleep(time.Duration(5) * time.Second)
 		}
-		wg.Wait()
+		*/
 	}
 
 }
