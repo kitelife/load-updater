@@ -227,7 +227,5 @@ var (
 func main() {
 	flag.Parse()
 	sc_clk_tck = C.sysconf(C._SC_CLK_TCK)
-	fmt.Printf("loadLevel: %d\n", *loadLevel)
-	fmt.Printf("runDuration: %d\n", *runDuration)
 	startLoadUpdate(*loadLevel, *runDuration)
 }
