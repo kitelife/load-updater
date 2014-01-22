@@ -140,7 +140,7 @@ func startLoadUpdate() {
 		count := 0
 		for {
 			count += 1
-			if count%24000 == 0 {
+			if count%500000 == 0 {
 				time.Sleep(time.Microsecond)
 			}
 			select {
@@ -149,6 +149,7 @@ func startLoadUpdate() {
 				runtime.Goexit()
 			default:
 				_ = float64(count)/10.22
+				_ = float64(count+10000)/10.22
 			}
 		}
 	}
