@@ -80,8 +80,8 @@ func getSystemPerCPUTimes() []CPUInfo {
 	results := make([]CPUInfo, 16)
 	for _, line := range (lines) {
 		fields := strings.Fields(line)
-		fmt.Printf("fields length: %d\n", len(fields))
 		if len(fields) > 0 && strings.HasPrefix(fields[0], "cpu") {
+			fmt.Println(fields[0])
 			var oneCPU = make(CPUInfo)
 			userPart, _ := strconv.ParseFloat(fields[1], 64)
 			oneCPU["user"] = userPart/float64(sc_clk_tck)
@@ -135,7 +135,6 @@ func startLoadUpdate() {
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	var wg sync.WaitGroup
 	ch := make(chan int)
 	worker := func() {
 		count := 0
@@ -146,7 +145,6 @@ func startLoadUpdate() {
 			}
 			select {
 			case _ = <-ch:
-				wg.Done()
 				// 退出当前执行的goroutine，但是defer函数还会继续调用
 				runtime.Goexit()
 			default:
@@ -161,14 +159,12 @@ func startLoadUpdate() {
 			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
-					wg.Add(1)
 					go worker()
 					fmt.Printf("goroutinesRunning: %d\n", runtime.NumGoroutine())
 				}
 			}
 			goroutineStarted = true
 		}
-
 	}
 
 	stopGoroutines := func() {
@@ -177,13 +173,10 @@ func startLoadUpdate() {
 		for index := 0; index < goroutinesRunning; index++ {
 			ch<-index
 		}
-		close(ch)
-		wg.Wait()
 	}
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, os.Interrupt, os.Kill)
-	cpuPercent(1.0)
 	for {
 		startGoroutines()
 		loads := cpuPercent(1)
