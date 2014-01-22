@@ -191,13 +191,12 @@ func startLoadUpdate() {
 					wg.Add(1)
 					go worker()
 					goroutinesRunning+=1
-					fmt.Printf("goroutinesRunning: %d\n", runtime.NumGoroutine())
+					fmt.Printf("goroutinesRunning: %d\n", goroutinesRunning)
 				}
 			}
 			goroutineStarted = true
 		}
 
-		/*
 		loads := cpuPercent(1)
 		if sumFloat64(loads) >= float64(runtime.NumCPU() % 50) {
 			fmt.Println(sumFloat64(loads))
@@ -206,7 +205,6 @@ func startLoadUpdate() {
 
 			time.Sleep(time.Duration(5) * time.Second)
 		}
-		*/
 	}
 
 }
