@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sync"
 	"time"
 	"runtime"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	//"syscall"
 	"strconv"
 )
 
@@ -137,7 +135,6 @@ func startLoadUpdate() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	ch := make(chan int)
 	exitNotify := make(chan bool)
-	var mutex = &sync.Mutex{}
 	goroutinesRunning := 0
 	worker := func() {
 		count := 0
@@ -158,15 +155,15 @@ func startLoadUpdate() {
 
 	stopGoroutines := func() {
 		fmt.Println("In stopGoroutine")
+		fmt.Printf("before, goroutinesRunning: %d\n", goroutinesRunning)
 		for index := 0; index < goroutinesRunning; index++ {
 			ch <- index
 		}
 		for index := 0; index < goroutinesRunning; index++ {
 			fmt.Printf("exitNotify: %t\n", <-exitNotify)
-			mutex.Lock()
 			goroutinesRunning -= 1
-			mutex.Unlock()
 		}
+		fmt.Printf("after, goroutinesRunning: %d\n", goroutinesRunning)
 		goroutineStarted = false
 		fmt.Printf("goroutineStarted: %t\n", goroutineStarted)
 	}
@@ -187,9 +184,7 @@ func startLoadUpdate() {
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
 					go worker()
-					mutex.Lock()
 					goroutinesRunning+=1
-					mutex.Unlock()
 					fmt.Printf("goroutinesRunning: %d\n", goroutinesRunning)
 				}
 			}
@@ -200,8 +195,8 @@ func startLoadUpdate() {
 		if sumFloat64(loads) >= float64(runtime.NumCPU() % 50) {
 			fmt.Println(sumFloat64(loads))
 			stopGoroutines()
-			time.Sleep(time.Duration(5) * time.Second)
 		}
+		time.Sleep(time.Duration(5) * time.Second)
 	}
 
 }
