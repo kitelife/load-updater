@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"sync"
+	"sync"
 	"time"
 	"runtime"
 	"os"
@@ -137,6 +137,7 @@ func startLoadUpdate() {
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	ch := make(chan int)
+	var wg sync.WaitGroup
 	worker := func() {
 		count := 0
 		for {
@@ -163,6 +164,7 @@ func startLoadUpdate() {
 			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
+					wg.Add(1)
 					go worker()
 					fmt.Printf("goroutinesRunning: %d\n", runtime.NumGoroutine())
 				}
@@ -176,9 +178,11 @@ func startLoadUpdate() {
 		// 返回正在执行和排队的任务总数
 		goroutinesRunning := runtime.NumGoroutine()
 		for index := 0; index < goroutinesRunning; index++ {
-			ch<-index
+			ch<- index
 		}
+		wg.Wait()
 		goroutineStarted = false
+		fmt.Printf("goroutineStarted: %t", goroutineStarted)
 	}
 
 	sc := make(chan os.Signal, 1)
