@@ -1,7 +1,7 @@
 package main
 
 import (
-	"sync"
+	//"sync"
 	"time"
 	"runtime"
 	"os"
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"syscall"
 	"strconv"
 )
 
@@ -147,12 +148,14 @@ func startLoadUpdate() {
 			case _ = <-ch:
 				// 退出当前执行的goroutine，但是defer函数还会继续调用
 				runtime.Goexit()
+				return
 			default:
 				_ = float64(count)/10.22
 			}
 		}
 	}
 	startGoroutines := func() {
+		fmt.Println("In startGoroutine")
 		if goroutineStarted == false {
 			// 返回正在执行和排队的任务总数
 			goroutinesRunning := runtime.NumGoroutine()
@@ -176,7 +179,7 @@ func startLoadUpdate() {
 	}
 
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, os.Interrupt, os.Kill)
+	signal.Notify(sc, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 	for {
 		startGoroutines()
 		loads := cpuPercent(1)
