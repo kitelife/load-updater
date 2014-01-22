@@ -193,7 +193,7 @@ func startLoadUpdate() {
 		}
 
 		loads := cpuPercent(1)
-		if sumFloat64(loads) >= float64(runtime.NumCPU() % 50) {
+		if sumFloat64(loads) >= float64(runtime.NumCPU() * 50) {
 			fmt.Println(sumFloat64(loads))
 			stopGoroutines()
 		}
