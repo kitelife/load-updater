@@ -145,9 +145,8 @@ func startLoadUpdate() {
 			}
 			select {
 			case _ = <-ch:
-				exitNotify <- true
+			exitNotify <- true
 				runtime.Goexit()
-				return
 			default:
 				_ = float64(count)/10.22
 			}
@@ -160,12 +159,10 @@ func startLoadUpdate() {
 		for index := 0; index < goroutinesRunning; index++ {
 			ch <- index
 		}
-		for index := 0; index < goroutinesRunning; index++ {
-			select {
-			case v := <-exitNotify:
-				fmt.Printf("exitNotify: %t\n", v)
-				goroutinesRunning -= 1
-			}
+		goroutinesRunningBackUp := goroutinesRunning
+		for index := 0; index < goroutinesRunningBackUp; index++ {
+			fmt.Printf("exitNotify: %t\n", <-exitNotify)
+			goroutinesRunning-=1
 		}
 		fmt.Printf("after, goroutinesRunning: %d\n", goroutinesRunning)
 		goroutineStarted = false
