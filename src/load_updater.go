@@ -182,12 +182,13 @@ func startLoadUpdate(loadLevel, runDuration int) {
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, os.Interrupt, os.Kill)
+	forTimeOut := time.After(time.Duration(runDuration) * time.Minute)
 	for {
 		select {
 		case <-sc:
 			stopGoroutines()
 			return
-		case now := <-time.After(time.Duration(runDuration) * time.Minute):
+		case now := <-forTimeOut:
 			fmt.Println("%s, 运行时间到！", now.Format("2006-01-02 15:04:05"))
 			stopGoroutines()
 			return
