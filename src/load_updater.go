@@ -7,42 +7,154 @@ import (
 	"os"
 	"os/signal"
 	"fmt"
+	"io/ioutil"
+	"strings"
 )
 
+/*
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <stdlib.h>
+*/
+import "C"
+
+var sc_clk_tck C.long
+
 var goroutineStarted = false
+
+/*
+def get_system_per_cpu_times():
+    """Return a list of namedtuple representing the CPU times
+    for every CPU available on the system.
+    """
+    cpus = []
+    f = open('/proc/stat', 'r')
+    # get rid of the first line who refers to system wide CPU stats
+    try:
+        f.readline()
+        for line in f.readlines():
+            if line.startswith('cpu'):
+                values = line.split()[1:8]
+                values = tuple([float(x) / _CLOCK_TICKS for x in values])
+                entry = nt_sys_cputimes(*values[:7])
+                cpus.append(entry)
+        return cpus
+    finally:
+        f.close()
+*/
+
+type CPUInfo map[string]float64
+
+func calculate(t1, t2 CPUInfo) float64 {
+	sum := func(data CPUInfo) {
+		all := 0
+		for key, value := range (data) {
+			all += value
+		}
+		return all
+	}
+	t1All := sum(t1)
+	t1Busy := t1All - t1["idle"]
+
+	t2All := sum(t2)
+	t2Busy := t2All - t2["idle"]
+
+	if t2Busy <= t1Busy {
+		return 0.0
+	}
+	busyDelta := t2Busy - t1Busy
+	allDelta := t2All - t1All
+	busyPerc := (busyDelta / allDelta) * 100
+	return busyPerc
+}
+
+func getSystemPerCPUTimes() []CPUInfo {
+	statInfo, err := ioutil.ReadFile("/proc/stat")
+	if err != nil {
+		fmt.Println("Can not fetch /proc/stat")
+		return nil
+	}
+	lines := strings.Split(string(statInfo), "\n")
+	results := make([]CPUInfo, 16)
+	for _, line := range (lines) {
+		fields := strings.Fields(line)
+		if fields[0] == "cpu" {
+			var oneCPU CPUInfo
+			oneCPU["user"] = float64(fields[1])/float64(sc_clk_tck)
+			oneCPU["nice"] = float64(fields[2])/float64(sc_clk_tck)
+			oneCPU["system"] = float64(fields[3])/float64(sc_clk_tck)
+			oneCPU["idle"] = float64(fields[4])/float64(sc_clk_tck)
+			oneCPU["iowait"] = float64(fields[5])/float64(sc_clk_tck)
+			oneCPU["irq"] = float64(fields[6])/float64(sc_clk_tck)
+			oneCPU["softirq"] = float64(fields[7])/float64(sc_clk_tck)
+			results = append(results, oneCPU)
+		}
+	}
+	return results
+}
+
+func cpuPercent(interval int) []float64 {
+	blocking := true
+	if interval <= 0 {
+		blocking = false
+	}
+	var t1a []CPUInfo
+	if blocking {
+		t1a = getSystemPerCPUTimes()
+		time.Sleep(time.Second * time.Duration(interval))
+	}
+	t2a := getSystemPerCPUTimes()
+	infoPartNum := len(t2a)
+	ret := make([]float64, 16)
+	for index := 0; index < infoPartNum; index++ {
+		ret = append(ret, calculate(t1a[index], t2a[index]))
+	}
+	return ret
+}
+
+func sumFloat64(values []float64) float64 {
+	sum := 0
+	for value := range (values) {
+			sum + value
+	}
+	return sum
+}
 
 func startLoadUpdate() {
 
 	//透過 runtime.NumCPU() 取得 CPU 核心數
+	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	var wg sync.WaitGroup
 	ch := make(chan int)
-	goroutinesRunning := 0
-
 	worker := func() {
 		count := 0
 		for {
 			count += 1
-			if count%1000 == 0 {
+			if count%24000 == 0 {
 				time.Sleep(time.Microsecond)
 			}
 			select {
-			case v := <-ch:
+			case _ = <-ch:
 				wg.Done()
-				fmt.Printf("%d done!\n", v)
-				return
+				// 退出当前执行的goroutine，但是defer函数还会继续调用
+				runtime.Goexit()
 			default:
+				_ = float64(count)/10.22
 			}
 		}
 	}
 	startGoroutines := func() {
 		if goroutineStarted == false {
+			// 返回正在执行和排队的任务总数
+			goroutinesRunning := runtime.NumGoroutine()
 			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
 					wg.Add(1)
 					go worker()
-					goroutinesRunning += 1
+					fmt.Printf("goroutinesRunning: %d\n", runtime.NumGoroutine())
 				}
 			}
 			goroutineStarted = true
@@ -51,17 +163,26 @@ func startLoadUpdate() {
 	}
 
 	stopGoroutines := func() {
+		// 返回正在执行和排队的任务总数
+		goroutinesRunning := runtime.NumGoroutine()
 		for index := 0; index < goroutinesRunning; index++ {
 			ch<-index
 		}
-		//close(ch)
+		close(ch)
 		wg.Wait()
 	}
 
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, os.Interrupt, os.Kill)
+	cpuPercent(1.0)
 	for {
 		startGoroutines()
-		sc := make(chan os.Signal, 1)
-		signal.Notify(sc, os.Interrupt, os.Kill)
+		loads := cpuPercent(1)
+		if sumFloat64(loads) >= float64(runtime.NumCPU())%50.0 {
+			fmt.Println(sumFloat64(loads))
+			stopGoroutines()
+			time.Sleep(time.Duration(5) * time.Second)
+		}
 		select {
 		case _ = <-sc:
 			stopGoroutines()
@@ -69,8 +190,10 @@ func startLoadUpdate() {
 		default:
 		}
 	}
+
 }
 
 func main() {
+	sc_clk_tck = C.sysconf(C._SC_CLK_TCK)
 	startLoadUpdate()
 }
