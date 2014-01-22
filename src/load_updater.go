@@ -82,19 +82,19 @@ func getSystemPerCPUTimes() []CPUInfo {
 		fields := strings.Fields(line)
 		if fields[0] == "cpu" {
 			var oneCPU CPUInfo
-			userPart, _ := strconv.ParseFloat(fields[1])
+			userPart, _ := strconv.ParseFloat(fields[1], 64)
 			oneCPU["user"] = userPart/float64(sc_clk_tck)
-			nicePart, _ := strconv.ParseFloat(fields[2])
+			nicePart, _ := strconv.ParseFloat(fields[2], 64)
 			oneCPU["nice"] = nicePart/float64(sc_clk_tck)
-			systemPart, _ := strconv.ParseFloat(fields[3])
+			systemPart, _ := strconv.ParseFloat(fields[3], 64)
 			oneCPU["system"] = systemPart/float64(sc_clk_tck)
-			idlePart, _ := strconv.ParseFloat(fields[4])
+			idlePart, _ := strconv.ParseFloat(fields[4], 64)
 			oneCPU["idle"] = idlePart/float64(sc_clk_tck)
-			iowaitPart, _ := strconv.ParseFloat(fields[5])
+			iowaitPart, _ := strconv.ParseFloat(fields[5], 64)
 			oneCPU["iowait"] = iowaitPart/float64(sc_clk_tck)
-			irqPart, _ := strconv.ParseFloat(fields[6])
+			irqPart, _ := strconv.ParseFloat(fields[6], 64)
 			oneCPU["irq"] = irqPart/float64(sc_clk_tck)
-			softirqPart, _ := strconv.ParseFloat(fields[7])
+			softirqPart, _ := strconv.ParseFloat(fields[7], 64)
 			oneCPU["softirq"] = softirqPart/float64(sc_clk_tck)
 			results = append(results, oneCPU)
 		}
@@ -122,9 +122,9 @@ func cpuPercent(interval int) []float64 {
 }
 
 func sumFloat64(values []float64) float64 {
-	sum := 0
+	sum := 0.0
 	for value := range (values) {
-			sum + value
+		sum += value
 	}
 	return sum
 }
@@ -186,7 +186,7 @@ func startLoadUpdate() {
 	for {
 		startGoroutines()
 		loads := cpuPercent(1)
-		if sumFloat64(loads) >= float64(runtime.NumCPU())%50.0 {
+		if sumFloat64(loads) >= float64(runtime.NumCPU()%50) {
 			fmt.Println(sumFloat64(loads))
 			stopGoroutines()
 			time.Sleep(time.Duration(5) * time.Second)
