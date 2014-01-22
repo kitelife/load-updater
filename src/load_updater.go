@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"strconv"
 )
 
 /*
@@ -47,8 +48,8 @@ def get_system_per_cpu_times():
 type CPUInfo map[string]float64
 
 func calculate(t1, t2 CPUInfo) float64 {
-	sum := func(data CPUInfo) {
-		all := 0
+	sum := func(data CPUInfo) float64{
+		all := 0.0
 		for key, value := range (data) {
 			all += value
 		}
@@ -81,13 +82,13 @@ func getSystemPerCPUTimes() []CPUInfo {
 		fields := strings.Fields(line)
 		if fields[0] == "cpu" {
 			var oneCPU CPUInfo
-			oneCPU["user"] = float64(fields[1])/float64(sc_clk_tck)
-			oneCPU["nice"] = float64(fields[2])/float64(sc_clk_tck)
-			oneCPU["system"] = float64(fields[3])/float64(sc_clk_tck)
-			oneCPU["idle"] = float64(fields[4])/float64(sc_clk_tck)
-			oneCPU["iowait"] = float64(fields[5])/float64(sc_clk_tck)
-			oneCPU["irq"] = float64(fields[6])/float64(sc_clk_tck)
-			oneCPU["softirq"] = float64(fields[7])/float64(sc_clk_tck)
+			oneCPU["user"] = strconv.ParseFloat(fields[1])/float64(sc_clk_tck)
+			oneCPU["nice"] = strconv.ParseFloat(fields[2])/float64(sc_clk_tck)
+			oneCPU["system"] = strconv.ParseFloat(fields[3])/float64(sc_clk_tck)
+			oneCPU["idle"] = strconv.ParseFloat(fields[4])/float64(sc_clk_tck)
+			oneCPU["iowait"] = strconv.ParseFloat(fields[5])/float64(sc_clk_tck)
+			oneCPU["irq"] = strconv.ParseFloat(fields[6])/float64(sc_clk_tck)
+			oneCPU["softirq"] = strconv.ParseFloat(fields[7])/float64(sc_clk_tck)
 			results = append(results, oneCPU)
 		}
 	}
