@@ -187,8 +187,8 @@ func startLoadUpdate(loadLevel, runDuration int) {
 		case <-sc:
 			stopGoroutines()
 			return
-		case <-time.After(time.Duration(runDuration) * time.Minute):
-			fmt.Println("运行时间到！")
+		case now := <-time.After(time.Duration(runDuration) * time.Minute):
+			fmt.Println("%s, 运行时间到！", now.Format("2006-01-02 15:04:05"))
 			stopGoroutines()
 			return
 		default:
