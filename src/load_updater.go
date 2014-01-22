@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"sync"
+	"sync"
 	"time"
 	"runtime"
 	"os"
@@ -137,6 +137,7 @@ func startLoadUpdate() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	ch := make(chan int)
 	exitNotify := make(chan bool)
+	var mutex = &sync.Mutex{}
 	goroutinesRunning := 0
 	worker := func() {
 		count := 0
@@ -162,7 +163,9 @@ func startLoadUpdate() {
 		}
 		for index := 0; index < goroutinesRunning; index++ {
 			fmt.Printf("exitNotify: %t\n", <-exitNotify)
+			mutex.Lock()
 			goroutinesRunning -= 1
+			mutex.Unlock()
 		}
 		goroutineStarted = false
 		fmt.Printf("goroutineStarted: %t\n", goroutineStarted)
@@ -184,7 +187,9 @@ func startLoadUpdate() {
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
 					go worker()
+					mutex.Lock()
 					goroutinesRunning+=1
+					mutex.Unlock()
 					fmt.Printf("goroutinesRunning: %d\n", goroutinesRunning)
 				}
 			}
