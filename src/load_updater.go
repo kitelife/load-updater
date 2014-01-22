@@ -123,7 +123,7 @@ func cpuPercent(interval int) []float64 {
 
 func sumFloat64(values []float64) float64 {
 	sum := 0.0
-	for value := range (values) {
+	for _, value := range (values) {
 		sum += value
 	}
 	return sum
