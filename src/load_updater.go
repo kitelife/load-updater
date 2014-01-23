@@ -189,7 +189,7 @@ func startLoadUpdate(loadLevel, runDuration int) {
 		// tnm2上对CPU使用率是每15秒采集一次，我们的检测间隔应小于15秒
 		loads := cpuPercent(5)
 
-		if sumFloat64(loads) >= float64(runtime.NumCPU() * 50) {
+		if sumFloat64(loads) >= float64((runtime.NumCPU() + 1) * 50) {
 			fmt.Println(sumFloat64(loads))
 			stopGoroutines()
 		}
