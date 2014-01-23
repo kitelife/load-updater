@@ -1,18 +1,18 @@
 #!/bin/bash
 
-chmod +x $1
-
 while read line
 do
-    ip=$(cut $line -f1)
-    cpuNum=$(cut $line -f2)
+    ip=$(echo -n $line | cut -d ' ' -f1)
+    cpuNum=$(echo -n $line | cut -d ' ' -f2)
     loadLevel=1
-    if [ cpuNum -gt 4 ]; then
+    if [ 4 -lt $cpuNum ]; then
         loadLevel=2
     fi
-    if [ cpuNum -gt 8 ]; then
+    if [ 8 -lt $cpuNum ]; then
         loadLevel=3
     fi
+    echo $ip
     echo $loadLevel
-    ssh -q -n root@$line '/root/load_updater -load_level=$loadLevel -run_duration=10 > /dev/null 2>&1 &'
+    command="/root/load_updater -load_level=$loadLevel -run_duration=10 > /dev/null 2>&1 &"
+    ssh -q -n root@$ip $command
 done<server_with_cpunum.txt
