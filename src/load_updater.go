@@ -108,7 +108,7 @@ func sumFloat64(values []float64) float64 {
 	return sum
 }
 
-func startLoadUpdate(loadLevel, runDuration int) {
+func startLoadUpdate(pauseInterval, runDuration int) {
 
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
@@ -116,12 +116,6 @@ func startLoadUpdate(loadLevel, runDuration int) {
 	ch := make(chan int)
 	exitNotify := make(chan bool)
 	goroutinesRunning := 0
-	pauseInterval := 50000
-	if loadLevel > 2 {
-		pauseInterval = 500000
-	}else if loadLevel > 1 {
-		pauseInterval = 100000
-	}
 
 	worker := func() {
 		count := 0
@@ -135,13 +129,9 @@ func startLoadUpdate(loadLevel, runDuration int) {
 			exitNotify <- true
 				runtime.Goexit()
 			default:
-				_ = float64(count)/10.22
-				if loadLevel > 1 {
-					_ = float64(count + 1000)/10.22
-				}
-				if loadLevel > 2 {
-					_ = float64(count + 5000)/10.22
-				}
+				_ = float64(count + 500)/10.22
+				_ = float64(count + 1000)/10.22
+				_ = float64(count + 5000)/10.22
 			}
 		}
 	}
@@ -198,12 +188,12 @@ func startLoadUpdate(loadLevel, runDuration int) {
 }
 
 var (
-	loadLevel   = flag.Int("load_level", 1, "Set the server CPU load level")
-	runDuration = flag.Int("run_duration", 10, "time duration this program to run, whose unit is minute")
+	pauseInterval = flag.Int("pause_interval", 100000, "can cause the server to have different CPU load")
+	runDuration   = flag.Int("run_duration", 10, "time duration this program to run, whose unit is minute")
 )
 
 func main() {
 	flag.Parse()
 	sc_clk_tck = C.sysconf(C._SC_CLK_TCK)
-	startLoadUpdate(*loadLevel, *runDuration)
+	startLoadUpdate(*pauseInterval, *runDuration)
 }

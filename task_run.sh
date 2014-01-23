@@ -4,15 +4,15 @@ while read line
 do
     ip=$(echo -n $line | cut -d ' ' -f1)
     cpuNum=$(echo -n $line | cut -d ' ' -f2)
-    loadLevel=1
+    pauseInterval=500000
     if [ 4 -lt $cpuNum ]; then
-        loadLevel=2
+        pauseInterval=1000000
     fi
     if [ 8 -lt $cpuNum ]; then
-        loadLevel=3
+        pauseInterval=2000000
     fi
     echo $ip
-    echo $loadLevel
-    command="/root/load_updater -load_level=$loadLevel -run_duration=10 > /dev/null 2>&1 &"
+    echo $pauseInterval
+    command="/root/load_updater -pause_interval=$pauseInterval -run_duration=10 > /dev/null 2>&1 &"
     ssh -q -n root@$ip $command
 done<server_with_cpunum.txt
