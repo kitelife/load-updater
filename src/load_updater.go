@@ -108,11 +108,11 @@ func sumFloat64(values []float64) float64 {
 	return sum
 }
 
-func startLoadUpdate(pauseInterval, runDuration int) {
+func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU() * goroutinesPerCPU)
 	ch := make(chan int)
 	exitNotify := make(chan bool)
 	goroutinesRunning := 0
@@ -166,7 +166,7 @@ func startLoadUpdate(pauseInterval, runDuration int) {
 		}
 
 		if goroutineStarted == false {
-			goroutineNumToRun := runtime.NumCPU() - goroutinesRunning
+			goroutineNumToRun := runtime.NumCPU() * goroutinesPerCPU - goroutinesRunning
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
 					go worker()
@@ -188,12 +188,13 @@ func startLoadUpdate(pauseInterval, runDuration int) {
 }
 
 var (
-	pauseInterval = flag.Int("pause_interval", 100000, "can cause the server to have different CPU load")
-	runDuration   = flag.Int("run_duration", 10, "time duration this program to run, whose unit is minute")
+	pauseInterval    = flag.Int("i", 500000, "can cause the server to have different CPU load")
+	runDuration      = flag.Int("d", 10, "time duration this program to run, whose unit is minute")
+	goroutinesPerCPU = flag.Int("n", 1, "number of goroutine to run on one CPU")
 )
 
 func main() {
 	flag.Parse()
 	sc_clk_tck = C.sysconf(C._SC_CLK_TCK)
-	startLoadUpdate(*pauseInterval, *runDuration)
+	startLoadUpdate(*pauseInterval, *runDuration, *goroutinesPerCPU)
 }
