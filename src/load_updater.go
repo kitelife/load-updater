@@ -112,7 +112,7 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
-	runtime.GOMAXPROCS(runtime.NumCPU() * goroutinesPerCPU)
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	ch := make(chan int)
 	exitNotify := make(chan bool)
 	goroutinesRunning := 0
