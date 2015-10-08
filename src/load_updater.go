@@ -115,7 +115,7 @@ func genRandInt() int {
 	return r.Intn(50)
 }
 
-func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
+func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int, forever bool) {
 
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
@@ -168,8 +168,12 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 			return
 		case now := <-forTimeOut:
 			stopGoroutines()
-			fmt.Printf("%s, 运行时间到！\n", now.Format("2006-01-02 15:04:05"))
-			return
+			if forever {
+				time.Sleep(time.Duration(genRandInt()*30) * time.Second)
+			} else {
+				fmt.Printf("%s, 运行时间到！\n", now.Format("2006-01-02 15:04:05"))
+				return
+			}
 		default:
 			// 为了不阻塞，得加default分支
 		}
@@ -203,11 +207,12 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 var (
 	pauseInterval    = flag.Int("i", 500000, "can cause the server to have different CPU load")
 	runDuration      = flag.Int("d", 10, "time duration this program to run, whose unit is minute")
+	forever          = flag.Bool("e", true, "run it forever")
 	goroutinesPerCPU = flag.Int("n", 1, "number of goroutine to run on one CPU")
 )
 
 func main() {
 	flag.Parse()
 	sc_clk_tck = C.sysconf(C._SC_CLK_TCK)
-	startLoadUpdate(*pauseInterval, *runDuration, *goroutinesPerCPU)
+	startLoadUpdate(*pauseInterval, *runDuration, *goroutinesPerCPU, *forever)
 }
