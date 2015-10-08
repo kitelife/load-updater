@@ -137,8 +137,8 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 				runtime.Goexit()
 			default:
 				_ = float64(count+500) / 10.22
-				_ = float64(count+1000) / 10.22
 				if goodLuck {
+					_ = float64(count+1000) / 10.22
 					_ = float64(count+5000) / 10.22
 				}
 			}
