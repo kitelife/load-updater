@@ -1,15 +1,16 @@
 package main
 
 import (
-	"time"
-	"runtime"
-	"os"
-	"os/signal"
+	"flag"
 	"fmt"
 	"io/ioutil"
-	"strings"
+	"math/rand"
+	"os"
+	"os/signal"
+	"runtime"
 	"strconv"
-	"flag"
+	"strings"
+	"time"
 )
 
 /*
@@ -29,7 +30,7 @@ type CPUInfo map[string]float64
 func calculate(t1, t2 CPUInfo) float64 {
 	sum := func(data CPUInfo) float64 {
 		all := 0.0
-		for _, value := range (data) {
+		for _, value := range data {
 			all += value
 		}
 		return all
@@ -57,24 +58,24 @@ func getSystemPerCPUTimes() []CPUInfo {
 	}
 	lines := strings.Split(string(statInfo), "\n")
 	results := make([]CPUInfo, 16)
-	for _, line := range (lines) {
+	for _, line := range lines {
 		fields := strings.Fields(line)
 		if len(fields) > 0 && strings.HasPrefix(fields[0], "cpu") {
 			var oneCPU = make(CPUInfo)
 			userPart, _ := strconv.ParseFloat(fields[1], 64)
-			oneCPU["user"] = userPart/float64(sc_clk_tck)
+			oneCPU["user"] = userPart / float64(sc_clk_tck)
 			nicePart, _ := strconv.ParseFloat(fields[2], 64)
-			oneCPU["nice"] = nicePart/float64(sc_clk_tck)
+			oneCPU["nice"] = nicePart / float64(sc_clk_tck)
 			systemPart, _ := strconv.ParseFloat(fields[3], 64)
-			oneCPU["system"] = systemPart/float64(sc_clk_tck)
+			oneCPU["system"] = systemPart / float64(sc_clk_tck)
 			idlePart, _ := strconv.ParseFloat(fields[4], 64)
-			oneCPU["idle"] = idlePart/float64(sc_clk_tck)
+			oneCPU["idle"] = idlePart / float64(sc_clk_tck)
 			iowaitPart, _ := strconv.ParseFloat(fields[5], 64)
-			oneCPU["iowait"] = iowaitPart/float64(sc_clk_tck)
+			oneCPU["iowait"] = iowaitPart / float64(sc_clk_tck)
 			irqPart, _ := strconv.ParseFloat(fields[6], 64)
-			oneCPU["irq"] = irqPart/float64(sc_clk_tck)
+			oneCPU["irq"] = irqPart / float64(sc_clk_tck)
 			softirqPart, _ := strconv.ParseFloat(fields[7], 64)
-			oneCPU["softirq"] = softirqPart/float64(sc_clk_tck)
+			oneCPU["softirq"] = softirqPart / float64(sc_clk_tck)
 			results = append(results, oneCPU)
 		}
 	}
@@ -102,10 +103,16 @@ func cpuPercent(interval int) []float64 {
 
 func sumFloat64(values []float64) float64 {
 	sum := 0.0
-	for _, value := range (values) {
+	for _, value := range values {
 		sum += value
 	}
 	return sum
+}
+
+func genRandInt() int {
+	seed := time.Now().Unix()
+	r := rand.New(rand.NewSource(seed))
+	return r.Intn(50)
 }
 
 func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
@@ -117,7 +124,7 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 	exitNotify := make(chan bool)
 	goroutinesRunning := 0
 
-	worker := func() {
+	worker := func(goodLuck bool) {
 		count := 0
 		for {
 			count += 1
@@ -126,12 +133,14 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 			}
 			select {
 			case <-ch:
-			exitNotify <- true
+				exitNotify <- true
 				runtime.Goexit()
 			default:
-				_ = float64(count + 500)/10.22
-				_ = float64(count + 1000)/10.22
-				_ = float64(count + 5000)/10.22
+				_ = float64(count+500) / 10.22
+				_ = float64(count+1000) / 10.22
+				if goodLuck {
+					_ = float64(count+5000) / 10.22
+				}
 			}
 		}
 	}
@@ -144,7 +153,7 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 		goroutinesRunningBackUp := goroutinesRunning
 		for index := 0; index < goroutinesRunningBackUp; index++ {
 			fmt.Printf("exitNotify: %t\n", <-exitNotify)
-			goroutinesRunning-=1
+			goroutinesRunning -= 1
 		}
 		goroutineStarted = false
 	}
@@ -166,11 +175,15 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 		}
 
 		if goroutineStarted == false {
-			goroutineNumToRun := runtime.NumCPU() * goroutinesPerCPU - goroutinesRunning
+			goroutineNumToRun := runtime.NumCPU()*goroutinesPerCPU - goroutinesRunning
+			goodLuck := false
+			if genRandInt() >= 25 {
+				goodLuck = true
+			}
 			if goroutineNumToRun > 0 {
 				for index := 0; index < goroutineNumToRun; index++ {
-					go worker()
-					goroutinesRunning+=1
+					go worker(goodLuck)
+					goroutinesRunning += 1
 					fmt.Printf("goroutinesRunning: %d\n", goroutinesRunning)
 				}
 			}
@@ -178,7 +191,7 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int) {
 		}
 		loads := cpuPercent(5)
 
-		if sumFloat64(loads) >= float64((runtime.NumCPU() + 1) * 50) {
+		if sumFloat64(loads) >= float64((runtime.NumCPU()+1)*50) {
 			fmt.Println(sumFloat64(loads))
 			stopGoroutines()
 		}
