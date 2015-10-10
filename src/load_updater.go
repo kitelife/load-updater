@@ -115,7 +115,7 @@ func genRandInt() int {
 	return r.Intn(50)
 }
 
-func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int, forever bool) {
+func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU, loadLimit int, forever bool) {
 
 	//透過 runtime.NumCPU() 取得 CPU 核心數
 	fmt.Printf("NumCPU: %d\n", runtime.NumCPU())
@@ -195,7 +195,7 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU int, forever b
 		}
 		loads := cpuPercent(5)
 
-		if sumFloat64(loads) >= float64((runtime.NumCPU()+1)*50) {
+		if sumFloat64(loads) >= float64((runtime.NumCPU()+1)*loadLimit) {
 			fmt.Println(sumFloat64(loads))
 			stopGoroutines()
 		}
@@ -209,10 +209,11 @@ var (
 	runDuration      = flag.Int("d", 10, "time duration this program to run, whose unit is minute")
 	forever          = flag.Bool("e", true, "run it forever")
 	goroutinesPerCPU = flag.Int("n", 1, "number of goroutine to run on one CPU")
+	loadLimit        = flag.Int("l", 50, "cpu usage")
 )
 
 func main() {
 	flag.Parse()
 	sc_clk_tck = C.sysconf(C._SC_CLK_TCK)
-	startLoadUpdate(*pauseInterval, *runDuration, *goroutinesPerCPU, *forever)
+	startLoadUpdate(*pauseInterval, *runDuration, *goroutinesPerCPU, *loadLimit, *forever)
 }
