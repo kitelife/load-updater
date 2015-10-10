@@ -197,7 +197,7 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU, loadLimit int
 		loads := cpuPercent(5)
 
 		if sumFloat64(loads) >= float64((runtime.NumCPU()+1)*loadLimit) {
-			fmt.Println(sumFloat64(loads))
+			// fmt.Println(sumFloat64(loads))
 			stopGoroutines()
 		}
 		time.Sleep(time.Duration(5) * time.Second)
