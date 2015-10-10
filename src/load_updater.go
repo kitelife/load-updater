@@ -146,13 +146,14 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU, loadLimit int
 	}
 
 	stopGoroutines := func() {
-		fmt.Printf("before, goroutinesRunning: %d\n", goroutinesRunning)
+		// fmt.Printf("before, goroutinesRunning: %d\n", goroutinesRunning)
 		for index := 0; index < goroutinesRunning; index++ {
 			ch <- index
 		}
 		goroutinesRunningBackUp := goroutinesRunning
 		for index := 0; index < goroutinesRunningBackUp; index++ {
-			fmt.Printf("exitNotify: %t\n", <-exitNotify)
+			// fmt.Printf("exitNotify: %t\n", <-exitNotify)
+			<-exitNotify
 			goroutinesRunning -= 1
 		}
 		goroutineStarted = false
@@ -188,7 +189,7 @@ func startLoadUpdate(pauseInterval, runDuration, goroutinesPerCPU, loadLimit int
 				for index := 0; index < goroutineNumToRun; index++ {
 					go worker(goodLuck)
 					goroutinesRunning += 1
-					fmt.Printf("goroutinesRunning: %d\n", goroutinesRunning)
+					// fmt.Printf("goroutinesRunning: %d\n", goroutinesRunning)
 				}
 			}
 			goroutineStarted = true
