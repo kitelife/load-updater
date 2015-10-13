@@ -2,3 +2,4 @@
 pkg/
 bin/
 .idea/
+Godeps/_workspace/

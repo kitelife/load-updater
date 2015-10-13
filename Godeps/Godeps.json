@@ -1,0 +1,5 @@
+{
+	"ImportPath": "github.com/youngsterxyf/load-updater",
+	"GoVersion": "go1.5.1",
+	"Deps": []
+}
