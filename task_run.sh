@@ -13,6 +13,6 @@ do
     fi
     echo $ip
     echo $pauseInterval
-    command="/root/load_updater -pause_interval=$pauseInterval -run_duration=10 > /dev/null 2>&1 &"
+    command="nohup /root/load-updater -i=$pauseInterval -d=10 > /dev/null 2>&1 &"
     /usr/local/bin/ssh -q -n root@$ip $command
 done<server_with_cpunum.txt
